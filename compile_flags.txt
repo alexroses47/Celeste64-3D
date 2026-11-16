@@ -1,0 +1,11 @@
+-xc++
+-std=gnu++20
+-D__3DS__
+-D__arm__
+-nostdinc++
+-isystem/opt/devkitpro/devkitARM/arm-none-eabi/include/c++/16.1.0
+-isystem/opt/devkitpro/devkitARM/arm-none-eabi/include/c++/16.1.0/arm-none-eabi
+-isystem/opt/devkitpro/libctru/include
+-isystem/opt/devkitpro/devkitARM/arm-none-eabi/include
+-Ibuild
+-Isource

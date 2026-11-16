@@ -1,0 +1,20 @@
+# salidas de compilación
+build/
+*.3dsx
+*.elf
+*.smdh
+*.cia
+*.lst
+*.map
+
+# contenido convertido del juego (se genera con ./build.sh convert desde tu copia)
+romfs/
+
+# dependencias externas (Celeste64 original, makerom, bannertool)
+ext/
+
+# entorno de Python
+tools/.venv/
+__pycache__/
+
+.DS_Store

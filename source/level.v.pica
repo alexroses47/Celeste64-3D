@@ -1,0 +1,45 @@
+; Shader de vértices de la geometría de los niveles (escenario, pinchos, bloques).
+; Igual que scene.v.pica, pero la luz del sol viene calculada al cargar el nivel
+; (el sol no se mueve), así que cada vértice cuesta la mitad de instrucciones:
+;   light.x = max(0, -dot(n, sol)) / 0.10 * 255   -> color.r (brillo)
+;   light.w = max(0,  dot(n, sol)) / 0.80 * 255   -> color.a (sombra)
+;   color.g = clamp(1 - z/50, 0, 1)                (niebla vertical, z del mundo)
+
+.fvec mvp[4]     ; projection * modelView
+.fvec fog        ; x = -1/50, y = 1 - offset.z/50
+.fvec lightScale ; (0.10/255, 0, 0, 0.80/255)
+
+.constf consts(0.0, 1.0, 0.0, 0.0)
+.alias zeros consts.xxxx
+.alias ones  consts.yyyy
+
+.out outpos position
+.out outtc0 texcoord0
+.out outclr color
+
+.alias inpos v0
+.alias intex v1
+.alias inlight v2
+
+.proc main
+	mov r0.xyz, inpos
+	mov r0.w, ones
+
+	dp4 outpos.x, mvp[0], r0
+	dp4 outpos.y, mvp[1], r0
+	dp4 outpos.z, mvp[2], r0
+	dp4 outpos.w, mvp[3], r0
+
+	mov outtc0, intex
+
+	mul r5, lightScale, inlight
+
+	mul r4.x, fog.x, r0.z
+	add r4.x, fog.y, r4.x
+	max r4.x, zeros, r4.x
+	min r4.x, ones, r4.x
+	mov r5.y, r4.x
+
+	mov outclr, r5
+	end
+.end

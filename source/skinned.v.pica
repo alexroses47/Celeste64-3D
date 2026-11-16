@@ -1,0 +1,100 @@
+; Shader de vértices para modelos con huesos (Default.hlsl con u_jointMult = 1).
+; Mezcla hasta 4 matrices de hueso (3 filas cada una) y aplica la misma luz que el escenario.
+
+.fvec projection[4], view[4]
+.fvec model[3]  ; filas 3x4 de la matriz del modelo (mundo)
+.fvec sun       ; xyz = dirección del sol en el mundo
+.fvec params    ; x = 1/127, y = 1/50, z = 0.8 * efectos, w = 0.10 * efectos
+.fvec bones[72] ; hasta 24 huesos x 3 filas
+
+.constf consts(0.0, 1.0, 0.00392156863, 0.0)
+.alias zeros consts.xxxx
+.alias ones  consts.yyyy
+
+.out outpos position
+.out outtc0 texcoord0
+.out outclr color
+
+.alias inpos v0
+.alias intex v1
+.alias innrm v2
+.alias injnt v3   ; índices de hueso ya multiplicados por 3
+.alias inwgt v4   ; pesos * 255
+
+.proc main
+	; r6 = pesos en [0, 1]
+	mul r6, consts.zzzz, inwgt
+
+	; r7, r8, r9 = filas de la matriz combinada
+	mova a0.xy, injnt.xy
+	mul r7, bones[a0.x], r6.xxxx
+	mul r8, bones[a0.x+1], r6.xxxx
+	mul r9, bones[a0.x+2], r6.xxxx
+	mad r7, r6.yyyy, bones[a0.y], r7
+	mad r8, r6.yyyy, bones[a0.y+1], r8
+	mad r9, r6.yyyy, bones[a0.y+2], r9
+	mova a0.xy, injnt.zw
+	mad r7, r6.zzzz, bones[a0.x], r7
+	mad r8, r6.zzzz, bones[a0.x+1], r8
+	mad r9, r6.zzzz, bones[a0.x+2], r9
+	mad r7, r6.wwww, bones[a0.y], r7
+	mad r8, r6.wwww, bones[a0.y+1], r8
+	mad r9, r6.wwww, bones[a0.y+2], r9
+
+	; r1 = posición deformada (espacio del modelo)
+	mov r0.xyz, inpos
+	mov r0.w, ones
+	dp4 r1.x, r7, r0
+	dp4 r1.y, r8, r0
+	dp4 r1.z, r9, r0
+	mov r1.w, ones
+
+	; r2 = posición en el mundo
+	dp4 r2.x, model[0], r1
+	dp4 r2.y, model[1], r1
+	dp4 r2.z, model[2], r1
+	mov r2.w, ones
+
+	; r3 = vista
+	dp4 r3.x, view[0], r2
+	dp4 r3.y, view[1], r2
+	dp4 r3.z, view[2], r2
+	dp4 r3.w, view[3], r2
+
+	dp4 outpos.x, projection[0], r3
+	dp4 outpos.y, projection[1], r3
+	dp4 outpos.z, projection[2], r3
+	dp4 outpos.w, projection[3], r3
+
+	mov outtc0, intex
+
+	; normal: huesos -> modelo -> normalizar
+	mul r4.xyz, params.xxx, innrm
+	dp3 r5.x, r7, r4
+	dp3 r5.y, r8, r4
+	dp3 r5.z, r9, r4
+	dp3 r4.x, model[0], r5
+	dp3 r4.y, model[1], r5
+	dp3 r4.z, model[2], r5
+	dp3 r5.x, r4, r4
+	rsq r5.x, r5.x
+	mul r4.xyz, r4.xyz, r5.xxx
+
+	; misma luz que scene.v.pica
+	dp3 r3.x, sun, r4
+	mov r3.y, -r3.x
+	max r3.xy, zeros, r3
+
+	mul r4.x, params.y, r2.z
+	add r4.y, ones, -r4.x
+	max r4.y, zeros, r4.y
+	min r4.y, ones, r4.y
+
+	mul r5.x, params.w, r3.y
+	mov r5.y, r4.y
+	mov r5.z, zeros
+	mul r5.w, params.z, r3.x
+	mov outclr, r5
+
+	end
+.end
