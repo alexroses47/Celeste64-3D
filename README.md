@@ -1,30 +1,61 @@
 # Celeste 64 for Nintendo 3DS (unofficial fan port)
 
 **3DS port by alexroses47.** A rewrite in C++ (libctru + citro3d) of
-[Celeste 64: Fragments of the Mountain](https://github.com/EXOK/Celeste64) that runs on an
-**Old 3DS with stereoscopic 3D**.
+[Celeste 64: Fragments of the Mountain](https://github.com/EXOK/Celeste64) that runs on the
+**original (Old) 3DS with stereoscopic 3D**.
 
 > This is an unofficial, non-commercial fan port. It is **not made or endorsed by the Celeste team**.
 > The Celeste IP and the game content are owned by Maddy Makes Games, Inc.
+
+<p align="center">
+  <img src="screenshots/01_title.png" width="49%"> <img src="screenshots/03_madeline.png" width="49%">
+</p>
 
 ## Install (FBI)
 
 Open **FBI → Remote Install → Scan QR Code** and scan:
 
-![QR](qr.png)
+<img src="qr.png" width="200">
 
-Or download `celeste64.cia` from the [latest release](../../releases/latest) and install it with FBI.
+Or download `celeste64.cia` from the [latest release](../../releases/latest), copy it to your SD card
+and install it with FBI.
 
-## What's included
+## Features
 
-- The whole game: title screen, postcard map, level 1, the 10 cassette levels (1-1 … 1-10) and the ending area.
-- Strawberries, springs, crystals, feathers, falling/moving/traffic/cassette blocks, coins and gates,
-  Granny, Theo, Badeline and the sign posts with their dialog and voices.
-- Music and sound effects, pause menu with options, and save data (`sdmc:/3ds/celeste64/save.txt`).
-- Stereoscopic 3D (slider), and a **30 FPS** option in *Pause → Options* for steadier frame pacing.
+- **Runs on Old 3DS** (and New 3DS). Tested on real Old 3DS hardware.
+- **Stereoscopic 3D**: use the 3D slider; the whole game is rendered for both eyes.
+- **30 FPS mode** (*Pause → Options → 30 FPS*): locks the game to a steady 30 fps. On Old 3DS the game
+  runs between 30 and 60 fps depending on the scene; the lock gives even frame pacing, which feels smoother
+  than a framerate that jumps around. The game logic always runs at a fixed 60 Hz like the original,
+  so physics feel the same in both modes.
+- **The whole game**: title screen, postcard level select, Forsaken City (level 1), the **10 cassette levels**
+  (1-1 … 1-10) and the ending area.
+- Madeline's full moveset: jump, dash, double dash, climbing, skidding, wall jumps, feathers, bubbles.
+- Strawberries (and the strawberry bubbles), springs, refill crystals, feathers, checkpoint flags,
+  falling / floating / moving / traffic / break / cassette blocks, coins and gates, the intro car.
+- Granny, Theo, Badeline and the signs, with portraits, dialog and voices.
+- Original music and sound effects, snow, dust, hair, dash trails, Madeline's silhouette behind walls,
+  the Z-guide (drop shadow line), screen wipes.
+- Pause menu with options (Z-guide, speedrun timer, 30 FPS, inverted camera, music and SFX volume)
+  and save data in `sdmc:/3ds/celeste64/save.txt`.
 
-Known: level 1-8 (more than 12,000 spikes) can dip below 30 fps with 3D on when the camera
-faces the spike walls.
+### Performance (measured on a real Old 3DS)
+
+| Area | 3D on | 3D off |
+|---|---|---|
+| Level 1 | ~41 fps average | ~54 fps average |
+| Level 1-8 (more than 12,000 spikes) | ~37 fps average, short dips when facing the spike walls | |
+
+## Screenshots
+
+*Taken from the emulator (one eye of the 3D image, 2× scaled).*
+
+<p align="center">
+  <img src="screenshots/02_postcard.png" width="49%"> <img src="screenshots/05_city.png" width="49%">
+  <img src="screenshots/04_dash.png" width="49%"> <img src="screenshots/06_granny.png" width="49%">
+  <img src="screenshots/07_strawberry.png" width="49%"> <img src="screenshots/08_cassette_1-6.png" width="49%">
+  <img src="screenshots/09_spikes_1-8.png" width="49%"> <img src="screenshots/10_options_30fps.png" width="49%">
+</p>
 
 ## Controls
 
@@ -32,7 +63,7 @@ faces the spike walls.
 |---|---|
 | Circle Pad | move |
 | B / X | jump |
-| A / Y | dash |
+| A / Y | dash, talk |
 | L / R | climb |
 | D-pad | camera |
 | START | pause |
@@ -55,14 +86,20 @@ python3 -m venv tools/.venv && tools/.venv/bin/pip install pillow numpy
 ## License
 
 The code in this repository follows the MIT license of the original Celeste 64 source (see `LICENSE`).
-Game content (and the icon/banner in `meta/`, made from it) belongs to Maddy Makes Games, Inc. and is
+Game content (and the icon, banner and screenshots, made from it) belongs to Maddy Makes Games, Inc. and is
 used under their permission for non-commercial fan projects.
 
 ---
 
 ## Español
 
-**Port de 3DS por alexroses47.** Port no oficial y sin fines de lucro de Celeste 64 para la
+**Port de 3DS por alexroses47.** Port no oficial y sin fines de lucro de Celeste 64 que funciona en la
 **Old 3DS con 3D estereoscópico**. No está hecho ni respaldado por el equipo de Celeste.
 
-Para instalarlo: **FBI → Remote Install → Scan QR Code** y escanea el código de arriba.
+- **Instalar:** FBI → Remote Install → Scan QR Code y escanea el código de arriba.
+- **Funciona en Old 3DS** (probado en consola real) y en New 3DS.
+- **3D estereoscópico** con el deslizador.
+- **Modo 30 FPS** (*Pausa → Options → 30 FPS*): fija el juego a 30 cuadros parejos. Se siente más fluido
+  que una velocidad que salta entre 30 y 60. La lógica siempre corre a 60 Hz como el original.
+- **El juego completo:** título, mapa de postales, el nivel 1, los 10 niveles extra de cassette y la zona final,
+  con música, voces, diálogos y partida guardada.
