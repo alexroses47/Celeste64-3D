@@ -38,6 +38,8 @@ and install it with FBI.
   the Z-guide (drop shadow line), screen wipes.
 - Pause menu with options (Z-guide, speedrun timer, 30 FPS, inverted camera, music and SFX volume)
   and save data in `sdmc:/3ds/celeste64/save.txt`.
+- **3D HOME Menu banner**: the game's 3D logo, gently swaying, when you select the app.
+- **Bottom screen**: Forsaken City postcard art with your strawberries, deaths and time while playing.
 
 ### Performance (measured on a real Old 3DS)
 
@@ -71,8 +73,8 @@ and install it with FBI.
 ## Building
 
 Requirements: devkitPro with `3ds-dev` and `3ds-libvorbisidec`, Python 3 with Pillow and numpy,
-`vgmstream-cli` and `oggenc` (audio). For the `.cia`: `makerom` (Project_CTR) and `bannertool`
-in `ext/ctrtools/` (see `build.sh`).
+`vgmstream-cli` and `oggenc` (audio). For the `.cia`: `makerom` (Project_CTR), `bannertool` and
+[pycgfx](https://github.com/skyfloogle/pycgfx) (3D banner, needs `gltflib`) in `ext/ctrtools/` (see `build.sh`).
 
 The game content is **not** in this repository: the converter reads it from your own copy.
 
@@ -98,7 +100,8 @@ used under their permission for non-commercial fan projects.
 
 - **Instalar:** FBI → Remote Install → Scan QR Code y escanea el código de arriba.
 - **Funciona en Old 3DS** (probado en consola real) y en New 3DS.
-- **3D estereoscópico** con el deslizador.
+- **3D estereoscópico** con el deslizador, y **banner 3D** con el logo del juego en el menú HOME.
+- **Pantalla de abajo** con el arte de Forsaken City y tus fresas, muertes y tiempo.
 - **Modo 30 FPS** (*Pausa → Options → 30 FPS*): fija el juego a 30 cuadros parejos. Se siente más fluido
   que una velocidad que salta entre 30 y 60. La lógica siempre corre a 60 Hz como el original.
 - **El juego completo:** título, mapa de postales, el nivel 1, los 10 niveles extra de cassette y la zona final,

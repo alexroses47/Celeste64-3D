@@ -37,6 +37,8 @@ namespace Sprites
 	void Begin2D();
 	// 2D sobre una textura de destino (sin la rotación de la pantalla de la 3DS)
 	void Begin2DTarget(float width, float height);
+	// 2D en la pantalla de abajo (320x240, y hacia abajo)
+	void Begin2DBottom();
 	// mezcla aditiva para lo que se dibuje después (hasta End2D o SetAdditive(false))
 	void SetAdditive(bool on);
 	void Image2DUV(C3D_Tex* tex, Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 uvA, Vec2 uvC, Color4 color);

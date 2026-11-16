@@ -213,6 +213,15 @@ namespace Sprites
 		C3D_DepthTest(false, GPU_ALWAYS, GPU_WRITE_COLOR);
 	}
 
+	void Begin2DBottom()
+	{
+		pendCount = 0;
+		Mtx_OrthoTilt(&ortho, 0.0f, 320.0f, 240.0f, 0.0f, 1.0f, -1.0f, true);
+		Mtx_Identity(&identity);
+		bindSprites(&ortho, &identity);
+		C3D_DepthTest(false, GPU_ALWAYS, GPU_WRITE_COLOR);
+	}
+
 	void Begin2DTarget(float width, float height)
 	{
 		pendCount = 0;

@@ -871,6 +871,92 @@ static void drawIcon(C3D_Tex* icon, const char* label, float x, float y, float s
 	Sprites::Text2D(label, x + size * 0.7f, y + size / 2 - Sprites::LineHeight() / 2, Color4());
 }
 
+// ---------------------------------------------------------------- pantalla de abajo
+// El arte de la postal de Forsaken City con el crédito del port (título) o las estadísticas
+// de la partida (jugando). Con SELECT apretado muestra los datos de prueba.
+static C3D_RenderTarget* targetBottom;
+static char debugText[512] = "";
+
+static void drawStat(C3D_Tex* icon, const char* text, float x, float y, float size)
+{
+	Sprites::Image2D(icon, x, y, size, size, Color4());
+	Sprites::Text2D(text, x + size * 0.85f, y + size / 2 - Sprites::LineHeight() * 0.65f, Color4(), true, -1, 1.3f);
+}
+
+static void drawBottomScreen(bool inGame)
+{
+	static C3D_Tex* art = Gfx::GetTexture("ui_postcard", false);
+	static C3D_Tex* iconStrawb = Gfx::GetTexture("spr_icon_strawberry", false);
+	static C3D_Tex* iconSkull = Gfx::GetTexture("spr_icon_skull", false);
+	static C3D_Tex* iconTimer = Gfx::GetTexture("spr_icon_stopwatch", false);
+	static float artW = 0, artH = 0;
+	if (artW == 0)
+	{
+		FILE* f = fopen("romfs:/tex/ui_postcard.size", "r");
+		int w = 3, h = 2;
+		if (f) { fscanf(f, "%d %d", &w, &h); fclose(f); }
+		artW = (float)w; artH = (float)h;
+	}
+
+	C3D_RenderTargetClear(targetBottom, C3D_CLEAR_ALL, 0x0b090dFF, 0);
+	C3D_FrameDrawOn(targetBottom);
+	Gfx::MarkUnbound();
+	Sprites::Begin2DBottom();
+
+	// la postal cubre toda la pantalla (recortada al centro)
+	float scale = fmaxf(320.0f / artW, 240.0f / artH);
+	float w = artW * scale, h = artH * scale;
+	float u0 = (w - 320) / 2 / w, v0 = (h - 240) / 2 / h;
+	if (art)
+		Sprites::Image2DUV(art, Vec2(0, 0), Vec2(320, 0), Vec2(320, 240), Vec2(0, 240),
+			Vec2(u0, 1 - v0), Vec2(1 - u0, v0), Color4());
+
+	auto centered = [](const char* text, float y, float sc, Color4 color)
+	{
+		Sprites::Text2D(text, 160 - Sprites::TextWidth(text) * sc / 2, y, color, true, -1, sc);
+	};
+
+	if (hidKeysHeld() & KEY_SELECT)
+	{
+		Sprites::Rect2D(0, 0, 320, 240, Color4(0, 0, 0, 1) * 0.8f);
+		Sprites::Text2D(debugText, 8, 8, Color4(), true);
+	}
+	else if (!inGame)
+	{
+		Sprites::Rect2D(0, 182, 320, 58, Color4(0, 0, 0, 1) * 0.55f);
+		centered("3DS port by alexroses47", 190, 1.3f, Color4());
+		centered("Unofficial fan port. Not made or endorsed by the Celeste team.", 216, 0.8f, Color4(0.75f, 0.75f, 0.75f, 1));
+	}
+	else
+	{
+		Sprites::Rect2D(0, 0, 320, 240, Color4(0, 0, 0, 1) * 0.35f);
+		// nombre del mapa arriba
+		char name[48];
+		if (Actors::mapName == "1") snprintf(name, sizeof(name), "Forsaken City");
+		else snprintf(name, sizeof(name), "Cassette %s", Actors::mapName.c_str());
+		Sprites::Rect2D(0, 0, 320, 40, Color4(0, 0, 0, 1) * 0.45f);
+		centered(name, 6, 2.0f, Color4());
+
+		// estadísticas de la partida (como en la postal del original)
+		char buf[32];
+		float size = 30;
+		snprintf(buf, sizeof(buf), "x%02d", (int)Save.record.strawberries.size());
+		drawStat(iconStrawb, buf, 52, 78, size);
+		snprintf(buf, sizeof(buf), "x%03d", Save.record.deaths);
+		drawStat(iconSkull, buf, 182, 78, size);
+		int ms = (int)(Save.record.time * 1000);
+		int hh = ms / 3600000, mm = (ms / 60000) % 60, ss = (ms / 1000) % 60, mil = ms % 1000;
+		if (hh > 0) snprintf(buf, sizeof(buf), "%02d:%02d:%02d:%03d", hh, mm, ss, mil);
+		else snprintf(buf, sizeof(buf), "%02d:%02d:%03d", mm, ss, mil);
+		float tw = size * 0.85f + Sprites::TextWidth(buf) * 1.3f;
+		drawStat(iconTimer, buf, 160 - tw / 2, 128, size);
+
+		Sprites::Rect2D(0, 212, 320, 28, Color4(0, 0, 0, 1) * 0.45f);
+		centered("START: pause", 218, 1.0f, Color4(0.85f, 0.85f, 0.85f, 1));
+	}
+	Sprites::End2D();
+}
+
 static void drawHud()
 {
 	static C3D_Tex* icon = Gfx::GetTexture("spr_icon_strawberry", false);
@@ -921,23 +1007,24 @@ static int shotCounter;
 
 static void saveScreenshot(C3D_RenderTarget* target)
 {
-	u8* buf = (u8*)linearAlloc(240 * 400 * 3);
+	const int W = target->frameBuf.height;   // 400 arriba, 320 abajo
+	u8* buf = (u8*)linearAlloc(240 * W * 3);
 	if (!buf) return;
-	C3D_SyncDisplayTransfer((u32*)target->frameBuf.colorBuf, GX_BUFFER_DIM(240, 400),
-		(u32*)buf, GX_BUFFER_DIM(240, 400), DISPLAY_TRANSFER_FLAGS);
+	C3D_SyncDisplayTransfer((u32*)target->frameBuf.colorBuf, GX_BUFFER_DIM(240, W),
+		(u32*)buf, GX_BUFFER_DIM(240, W), DISPLAY_TRANSFER_FLAGS);
 
 	char path[64];
 	snprintf(path, sizeof(path), "sdmc:/c64_shot_%d.bmp", shotCounter++);
 	FILE* f = fopen(path, "wb");
 	if (f)
 	{
-		u32 dataSize = 400 * 240 * 3;
+		u32 dataSize = W * 240 * 3;
 		u8 head[54] = { 'B', 'M' };
 		u32 v;
 		v = 54 + dataSize; memcpy(head + 2, &v, 4);
 		v = 54; memcpy(head + 10, &v, 4);
 		v = 40; memcpy(head + 14, &v, 4);
-		v = 400; memcpy(head + 18, &v, 4);
+		v = W; memcpy(head + 18, &v, 4);
 		v = 240; memcpy(head + 22, &v, 4);
 		u16 s = 1; memcpy(head + 26, &s, 2);
 		s = 24; memcpy(head + 28, &s, 2);
@@ -946,9 +1033,9 @@ static void saveScreenshot(C3D_RenderTarget* target)
 		static u8 row[400 * 3];
 		for (int r = 0; r < 240; r++)
 		{
-			for (int x = 0; x < 400; x++)
+			for (int x = 0; x < W; x++)
 				memcpy(&row[x * 3], &buf[(x * 240 + r) * 3], 3);
-			fwrite(row, sizeof(row), 1, f);
+			fwrite(row, W * 3, 1, f);
 		}
 		fclose(f);
 		logf_("captura %s\n", path);
@@ -1229,6 +1316,7 @@ static void loadAutoScript()
 		int n;
 		if (sscanf(line, "wait %d", &n) == 1) { s.kind = 'w'; s.frames = n; }
 		else if (sscanf(line, "hold %63s %d", word, &n) == 2) { s.kind = 'h'; s.keys = parseKeys(word); s.frames = n; }
+		else if (!strncmp(line, "shotb", 5)) s.kind = 'S';   // pantalla de abajo
 		else if (!strncmp(line, "shot", 4)) s.kind = 's';
 		else if (!strncmp(line, "log", 3)) s.kind = 'l';
 		else if (!strncmp(line, "game", 4)) s.kind = 'g';
@@ -1304,7 +1392,6 @@ int main()
 {
 	gfxInitDefault();
 	gfxSet3D(true);
-	consoleInit(GFX_BOTTOM, NULL);
 	romfsInit();
 
 	if (__3dslink_host.s_addr)
@@ -1325,6 +1412,8 @@ int main()
 	C3D_RenderTarget* targetR = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
 	C3D_RenderTargetSetOutput(targetL, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 	C3D_RenderTargetSetOutput(targetR, GFX_TOP, GFX_RIGHT, DISPLAY_TRANSFER_FLAGS);
+	targetBottom = C3D_RenderTargetCreate(240, 320, GPU_RB_RGBA8, GPU_RB_DEPTH16);
+	C3D_RenderTargetSetOutput(targetBottom, GFX_BOTTOM, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 	Gfx::Init();
 
 	Save.Load();
@@ -1332,7 +1421,7 @@ int main()
 	Sprites::Init();
 	if (!loadMap("1") || !playerData.Load("player"))
 	{
-		printf("No se pudo cargar el nivel. START para salir.\n");
+		logf_("No se pudo cargar el nivel.\n");
 		while (aptMainLoop()) { hidScanInput(); if (hidKeysDown() & KEY_START) break; gspWaitForVBlank(); }
 		C3D_Fini(); romfsExit(); gfxExit();
 		return 0;
@@ -1395,7 +1484,7 @@ int main()
 	u64 fpsTick = lastTick;
 	float fps = 0, logicMs = 0;
 	int stepsLast = 0;
-	bool wantShot = false;
+	bool wantShot = false, wantShotBottom = false;
 	u32 autoKeys = 0, autoPrevKeys = 0;
 	bool autoDone = false;
 
@@ -1409,7 +1498,6 @@ int main()
 
 		hidScanInput();
 		u32 down = hidKeysDown();
-		if (down & KEY_SELECT) wantShot = true;
 
 		// World.Update: START abre / cierra el menú de pausa
 		bool canPause = scene == SceneId::World && !player.Dead && !player.InStrawbGet() && !inTransition() && !Cutscenes::Active();
@@ -1433,8 +1521,9 @@ int main()
 				autoPrevKeys = autoKeys;
 				autoKeys = st.kind == 'h' ? st.keys : 0;
 				injectInput(autoKeys, autoPrevKeys);
-				bool done = st.kind == 's' || st.kind == 'l' ? true : ++autoFrames >= st.frames;
+				bool done = st.kind == 's' || st.kind == 'S' || st.kind == 'l' ? true : ++autoFrames >= st.frames;
 				if (st.kind == 's') wantShot = true;
+				if (st.kind == 'S') wantShotBottom = true;
 				if (done) { autoFrames = 0; if (++autoIndex >= (int)autoSteps.size()) { autoDone = true; autoIndex = (int)autoSteps.size() - 1; } }
 			}
 			else
@@ -1480,14 +1569,16 @@ int main()
 				drawTransition();
 				Sprites::End2D();
 			}
+			drawBottomScreen(false);
 			C3D_FrameEnd(0);
 			if (wantShot) { saveScreenshot(targetL); wantShot = false; }
+		if (wantShotBottom) { saveScreenshot(targetBottom); wantShotBottom = false; }
 			if (autoDone) { logf_("FIN\n"); break; }
 			continue;
 		}
 
 		// pantalla táctil: arriba = cámara libre, abajo = medición
-		if (down & KEY_TOUCH)
+		if ((down & KEY_TOUCH) && (hidKeysHeld() & KEY_SELECT))
 		{
 			touchPosition t;
 			hidTouchRead(&t);
@@ -1529,6 +1620,7 @@ int main()
 				case 'w': done = ++autoFrames >= s.frames; break;
 				case 'h': autoKeys = s.keys; done = ++autoFrames >= s.frames; break;
 				case 's': wantShot = true; done = true; break;
+				case 'S': wantShotBottom = true; done = true; break;
 				case 'l': logPlayer(); done = true; break;
 				case 't': player.Position = s.cam.pos; done = true; break;
 				case 'P': paused = true; pauseMenu.Index = 0; done = true; break;
@@ -1731,9 +1823,11 @@ int main()
 			drawHud();
 		}
 		float cmdUse = C3D_GetCmdBufUsage();
+		drawBottomScreen(true);
 		C3D_FrameEnd(0);
 
 		if (wantShot) { saveScreenshot(targetL); wantShot = false; }
+		if (wantShotBottom) { saveScreenshot(targetBottom); wantShotBottom = false; }
 		if (autoDone) { logf_("FIN\n"); break; }
 		if (bench.active) { bench.frames++; bench.trisSum += statTris; bench.callsSum += statCalls; }
 
@@ -1744,27 +1838,13 @@ int main()
 			fps = fpsFrames * (float)SYSCLOCK_ARM11 / (now - fpsTick);
 			fpsFrames = 0;
 			fpsTick = now;
-			Vec3 p = player.Position, vel = player.Velocity();
-			printf("\x1b[1;1HCeleste 64 3DS - prueba 5 (%s)\x1b[K\n", isNew ? "New" : "Old");
-			printf("\x1b[3;1HFPS:      %5.1f   pasos %d\x1b[K\n", fps, stepsLast);
-			printf("CPU:      %5.2f ms\x1b[K\n", C3D_GetProcessingTime());
-			printf("GPU:      %5.2f ms\x1b[K\n", C3D_GetDrawingTime());
-			printf("Logica:   %5.2f ms\x1b[K\n", logicMs);
-			printf("Rayos: %lu  Paredes: %lu  Caras: %lu\x1b[K\n", World::statRayCasts, World::statWallChecks, World::statFacesTested);
-			printf("Cmdbuf:   %5.1f %%   3D: %s\x1b[K\n", cmdUse * 100.0f, iod > 0 ? "si" : "no");
-			printf("Tri/cuad: %lu  Llamadas: %lu\x1b[K\n", statTris, statCalls);
-			printf("Estado:   %s  dashes %d\x1b[K\n", player.StateName(), player.Dashes());
-			printf("Pos: %.0f %.0f %.0f\x1b[K\n", p.x, p.y, p.z);
-			printf("Vel: %.0f %.0f %.0f\x1b[K\n", vel.x, vel.y, vel.z);
-			printf("Checkpoint: %d  Fresas: %d\x1b[K\n", Actors::currentCheckpoint, Actors::collectedCount);
-			printf("\x1b[16;1HModo: %s\x1b[K\n", mode == Mode::Game ? "juego" : (mode == Mode::Free ? "camara libre" : "midiendo..."));
-			printf("B/X saltar  Y/A dash  L/R escalar\x1b[K\n");
-			printf("D-pad camara  SELECT captura\x1b[K\n");
-			printf("Tactil: arriba camara libre,\x1b[K\n");
-			printf(" medio medicion, abajo: mapa\x1b[K\n");
-			printf("Mapa: %s\x1b[K\n", Actors::mapName.c_str());
-			printf("START: pausa (Save & Quit sale)\x1b[K\n");
-			printf("Audio: %.30s\x1b[K\n", Audio::Status());
+			// datos para la vista de prueba (SELECT en la pantalla de abajo)
+			snprintf(debugText, sizeof(debugText),
+				"%s 3DS  %s\nFPS %.1f  pasos %d\nCPU %.2f ms  GPU %.2f ms\nLogica %.2f ms  cmdbuf %.0f%%\n"
+				"%lu tri  %lu llamadas\nMapa %s  checkpoint %d\nTactil + SELECT: arriba camara libre,\nmedio medicion, abajo cambiar mapa",
+				isNew ? "New" : "Old", mode == Mode::Game ? "juego" : (mode == Mode::Free ? "camara libre" : "midiendo..."),
+				fps, stepsLast, C3D_GetProcessingTime(), C3D_GetDrawingTime(), logicMs, cmdUse * 100.0f,
+				statTris, statCalls, Actors::mapName.c_str(), Actors::currentCheckpoint);
 		}
 	}
 
