@@ -26,6 +26,11 @@ AccessControlInfo:
   FileSystemAccess:
    - DirectSdmc
    - DirectSdmcWrite
+  # memoria del DSP (ndsp escribe ahí: sin esto el juego se cae en ndspInit) y VRAM
+  IORegisterMapping:
+   - 1ff00000-1ff7ffff
+  MemoryMapping:
+   - 1f000000-1f5fffff:r
   MemoryType                    : Application
   SystemMode                    : 64MB
   IdealProcessor                : 0
