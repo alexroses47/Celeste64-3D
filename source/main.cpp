@@ -1355,7 +1355,7 @@ static void injectInput(u32 keys, u32 prevKeys)
 	};
 	act(Controls::Jump, KEY_B | KEY_X);
 	act(Controls::Dash, KEY_Y | KEY_A);
-	act(Controls::Climb, KEY_L | KEY_R);
+	act(Controls::Climb, Controls::ClimbMask());
 	act(Controls::Confirm, KEY_A);
 	act(Controls::Cancel, KEY_B);
 }
@@ -1390,6 +1390,7 @@ static void cycleMap()
 
 int main()
 {
+	osSetSpeedupEnable(true);   // New 3DS: 804 MHz y caché L2 (en la Old 3DS no hace nada)
 	gfxInitDefault();
 	gfxSet3D(true);
 	romfsInit();

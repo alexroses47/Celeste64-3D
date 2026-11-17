@@ -63,12 +63,16 @@ and install it with FBI.
 
 | Button | Action |
 |---|---|
-| Circle Pad | move |
-| B / X | jump |
-| A / Y | dash, talk |
-| L / R | climb |
-| D-pad | camera |
-| START | pause |
+| | Old 3DS | New 3DS |
+|---|---|---|
+| Move | Circle Pad | Circle Pad |
+| Jump | B / X | B / X |
+| Dash, talk | A / Y | A / Y |
+| Climb | L / R | ZL / ZR |
+| Camera | D-pad | C-Stick, L / R (turn), D-pad |
+| Pause | START | START |
+
+On New 3DS the game runs at 804 MHz with the L2 cache (both the `.cia` and the `.3dsx`).
 
 ## Building
 

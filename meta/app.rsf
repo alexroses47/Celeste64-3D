@@ -48,8 +48,9 @@ AccessControlInfo:
   RunnableOnSleep               : false
   SpecialMemoryArrange          : true
   SystemModeExt                 : Legacy
-  CpuSpeed                      : 268MHz
-  EnableL2Cache                 : false
+  # New 3DS: 804 MHz y caché L2 (la Old 3DS lo ignora)
+  CpuSpeed                      : 804MHz
+  EnableL2Cache                 : true
   CanAccessCore2                : true
   SystemCallAccess:
     ControlMemory: 1
